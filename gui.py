@@ -86,3 +86,72 @@ def draw_field(self, canvas, field_data):
             x2 = x1 + self.cell_size
             y2 = y1 + self.cell_size
             canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="black")
+ def setup_placement_screen(self, player_name, board, on_complete):
+    """Экран расстановки кораблей"""
+    for widget in self.window.winfo_children():
+        widget.destroy()
+    self.current_board = board
+    self.ships_to_place = [(4, 1), (3, 2), (2, 3), (1, 4)]  # (длина, количество)
+    self.current_ship_index = 0
+    self.horizontal = True
+    title = tk.Label(
+        self.window,
+        text=f"{player_name}, расставьте корабли",
+        font=("Arial", 16)
+    )
+    title.pack(pady=10)
+    self.ship_info_label = tk.Label(self.window, text="", font=("Arial", 12))
+    self.ship_info_label.pack()
+    self.update_ship_info()
+    rotate_btn = tk.Button(
+        self.window,
+        text="Повернуть (R)",
+        command=self.rotate_ship
+    )
+    rotate_btn.pack(pady=5)
+    frame, self.placement_canvas = self.create_field_canvas(
+        self.window,
+        "Ваше поле",
+        clickable=True,
+        click_callback=self.place_ship_click
+    )
+    frame.pack(pady=10)
+    auto_btn = tk.Button(
+        self.window,
+        text="Расставить автоматически",
+        command=lambda: self.auto_place(on_complete)
+    )
+    auto_btn.pack(pady=5)
+    self.on_placement_complete = on_complete
+    self.draw_field(self.placement_canvas, board.get_field_for_display())
+ def update_ship_info(self):
+    """Обновить информацию о текущем корабле"""
+    if self.current_ship_index < len(self.ships_to_place):
+        length, count = self.ships_to_place[self.current_ship_index]
+        direction = "горизонтально" if self.horizontal else "вертикально"
+        self.ship_info_label.config(
+            text=f"Корабль: {length} клетки, осталось: {count}, направление: {direction}"
+        )
+ def rotate_ship(self):
+    """Повернуть корабль"""
+    self.horizontal = not self.horizontal
+    self.update_ship_info()
+def place_ship_click(self, x, y):
+    """Обработка клика при расстановке"""
+    if self.current_ship_index >= len(self.ships_to_place):
+        return
+    length, count = self.ships_to_place[self.current_ship_index]
+    if self.current_board.place_ship(x, y, length, self.horizontal):
+        self.ships_to_place[self.current_ship_index] = (length, count - 1)
+        if count - 1 == 0:
+            self.current_ship_index += 1
+        self.draw_field(self.placement_canvas, self.current_board.get_field_for_display())
+        self.update_ship_info()
+        if self.current_ship_index >= len(self.ships_to_place):
+            self.window.after(500, self.on_placement_complete)
+ def auto_place(self, on_complete):
+    """Автоматическая расстановка"""
+    self.current_board.__init__()
+    self.current_board.place_ships_randomly()
+    self.draw_field(self.placement_canvas, self.current_board.get_field_for_display())
+    self.window.after(500, on_complete)
