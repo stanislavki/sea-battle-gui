@@ -1,5 +1,5 @@
 import tkinter as tk
- class BattleshipGUI:
+class BattleshipGUI:
     def __init__(self):
         self.window = tk.Tk()
         self.window.title("Морской бой")
@@ -41,7 +41,7 @@ import tkinter as tk
         print("Игра с ботом")
     def run(self):
         self.window.mainloop()
- if __name__ == "__main__":
+if __name__ == "__main__":
     app = BattleshipGUI()
     app.run()
 
@@ -86,7 +86,7 @@ def draw_field(self, canvas, field_data):
             x2 = x1 + self.cell_size
             y2 = y1 + self.cell_size
             canvas.create_rectangle(x1, y1, x2, y2, fill=color, outline="black")
- def setup_placement_screen(self, player_name, board, on_complete):
+def setup_placement_screen(self, player_name, board, on_complete):
     """Экран расстановки кораблей"""
     for widget in self.window.winfo_children():
         widget.destroy()
@@ -124,7 +124,7 @@ def draw_field(self, canvas, field_data):
     auto_btn.pack(pady=5)
     self.on_placement_complete = on_complete
     self.draw_field(self.placement_canvas, board.get_field_for_display())
- def update_ship_info(self):
+def update_ship_info(self):
     """Обновить информацию о текущем корабле"""
     if self.current_ship_index < len(self.ships_to_place):
         length, count = self.ships_to_place[self.current_ship_index]
@@ -132,7 +132,7 @@ def draw_field(self, canvas, field_data):
         self.ship_info_label.config(
             text=f"Корабль: {length} клетки, осталось: {count}, направление: {direction}"
         )
- def rotate_ship(self):
+def rotate_ship(self):
     """Повернуть корабль"""
     self.horizontal = not self.horizontal
     self.update_ship_info()
@@ -149,9 +149,82 @@ def place_ship_click(self, x, y):
         self.update_ship_info()
         if self.current_ship_index >= len(self.ships_to_place):
             self.window.after(500, self.on_placement_complete)
- def auto_place(self, on_complete):
+def auto_place(self, on_complete):
     """Автоматическая расстановка"""
     self.current_board.__init__()
     self.current_board.place_ships_randomly()
     self.draw_field(self.placement_canvas, self.current_board.get_field_for_display())
     self.window.after(500, on_complete)
+def setup_game_screen(self, game, player1_name, player2_name):
+    """Экран игры"""
+    for widget in self.window.winfo_children():
+        widget.destroy()
+    self.game = game
+    # Информация о ходе
+    self.turn_label = tk.Label(self.window, text="", font=("Arial", 14))
+    self.turn_label.pack(pady=10)
+    fields_frame = tk.Frame(self.window)
+    fields_frame.pack()
+    # Поле противника (по нему стреляем)
+    frame1, self.enemy_canvas = self.create_field_canvas(
+        fields_frame,
+        "Поле противника",
+        clickable=True,
+        click_callback=self.shoot_click
+    )
+    frame1.pack(side=tk.LEFT, padx=20)
+    # Своё поле (только смотрим)
+    frame2, self.my_canvas = self.create_field_canvas(
+        fields_frame,
+        "Ваше поле",
+        clickable=False
+    )
+    frame2.pack(side=tk.LEFT, padx=20)
+    self.result_label = tk.Label(self.window, text="", font=("Arial", 12))
+    self.result_label.pack(pady=10)
+    self.update_game_display()
+def update_game_display(self):
+    """Обновить отображение игры"""
+    if self.game.current_player == 1:
+        self.turn_label.config(text="Ход: Игрок 1")
+        enemy_field = self.game.board2.get_field_for_display(hide_ships=True)
+        my_field = self.game.board1.get_field_for_display()
+    else:
+        self.turn_label.config(text="Ход: Игрок 2")
+        enemy_field = self.game.board1.get_field_for_display(hide_ships=True)
+        my_field = self.game.board2.get_field_for_display()
+    self.draw_field(self.enemy_canvas, enemy_field)
+    self.draw_field(self.my_canvas, my_field)
+def shoot_click(self, x, y):
+    """Обработка выстрела"""
+    result = self.game.make_shot(x, y)
+    messages = {
+        "miss": "Мимо!",
+        "hit": "Попадание!",
+        "destroy": "Корабль уничтожен!",
+        "win": "ПОБЕДА!",
+        "invalid": "Сюда уже стреляли!"
+    }
+    self.result_label.config(text=messages.get(result, ""))
+    if result == "win":
+        winner = f"Игрок {self.game.winner}"
+        self.show_winner(winner)
+    else:
+        self.update_game_display()
+def show_winner(self, winner):
+    """Показать победителя"""
+    for widget in self.window.winfo_children():
+        widget.destroy()
+    label = tk.Label(
+        self.window,
+        text=f"Победил {winner}!",
+        font=("Arial", 24)
+    )
+    label.pack(pady=50)
+    btn = tk.Button(
+        self.window,
+        text="В главное меню",
+        font=("Arial", 14),
+        command=self.setup_main_menu
+    )
+    btn.pack()
